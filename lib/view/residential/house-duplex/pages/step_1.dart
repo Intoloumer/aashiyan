@@ -2,7 +2,8 @@
 
 import 'dart:convert';
 import 'dart:core';
-import 'package:aashiyan/components/contants.dart';
+import 'dart:ffi';
+import 'package:aashiyan/components/constant.dart';
 import 'package:aashiyan/components/forms.dart' as Forms;
 import 'package:aashiyan/components/forms.dart';
 import 'package:aashiyan/view/residential/house-duplex/providers/page_nav_provider.dart';
@@ -88,10 +89,13 @@ class _Step_1State extends State<Step_1> {
 
   int plotSize = 0;
   String plotSizeStr = '';
-  String selectedState = "Select State";
+  String selectedState = "";
+  // String selectedState = "";
 
   List cityData = [];
   List stateData = [];
+
+  // Map<String, dynamic> stateData = [];
   // List requirementDataByUserId = [];
 
   int plotWidth = 0;
@@ -107,14 +111,53 @@ class _Step_1State extends State<Step_1> {
 
     if (lengthText != '' && widthText != '') {
       calculation = (plotLenght * plotWidth).toString();
-      // print('calculation--');
-      // print(calculation);
       plotValue.value = plotValue.value.copyWith(
         text: calculation.toString(),
       );
     }
 
+    plotValue.text = calculation;
+    print(plotValue.text);
+    print(calculation);
     return calculation;
+  }
+
+  String apiRegularCalcuation() {
+    if (printData != null) {
+      lengthText = printData["project"]["plot_length"] != null
+          ? printData["project"]["plot_length"].toString()
+          : "";
+      widthText = printData["project"]["plot_width"] != null
+          ? printData["project"]["plot_width"].toString()
+          : "";
+      finalString = plotValue.text;
+
+      if (lengthText != '' && widthText != '') {
+        calculation = (plotLenght * plotWidth).toString();
+        plotValue.value = plotValue.value.copyWith(
+          text: calculation.toString(),
+        );
+      }
+      plotValue.text = calculation;
+      // print(plotValue.text);
+      // print(calculation);
+    }
+
+    return calculation;
+  }
+
+  String apiIregularCalcuation() {
+    diagonal1Text = diagonal1Controller;
+    diagonal2Text = diagonal2Controller;
+    finalDiagonal = plotValue.text;
+
+    if (diagonal1Text != '' && diagonal2Text != '') {
+      diagonalCalculation = (((diagonal1! * diagonal2!) / 2)).toString();
+      plotValue.value = plotValue.value.copyWith(
+        text: diagonalCalculation.toString(),
+      );
+    }
+    return diagonalCalculation;
   }
 
   int? diagonal1 = 0;
@@ -128,13 +171,12 @@ class _Step_1State extends State<Step_1> {
     diagonal2Text = diagonal2Controller;
     finalDiagonal = plotValue.text;
 
-    if (diagonal1 != '' && diagonal2 != '') {
+    if (diagonal1Text != '' && diagonal2Text != '') {
       diagonalCalculation = (((diagonal1! * diagonal2!) / 2)).toString();
       plotValue.value = plotValue.value.copyWith(
         text: diagonalCalculation.toString(),
       );
     }
-
     return diagonalCalculation;
   }
 
@@ -151,15 +193,15 @@ class _Step_1State extends State<Step_1> {
   Future<void> getState() async {
     try {
       var client = http.Client();
+      var tempStates;
       var response =
           await http.get(Uri.parse("${dotenv.env['APP_URL']}state/$STATE_ID"));
-      if (response.statusCode == 200) {
-        final jsonResponse = jsonDecode(response.body);
-        final stateList = jsonResponse['states'] as List;
+      if (response.statusCode == SUCCESS) {
+        Map jsonResponse = jsonDecode(response.body);
+        List tempStates = jsonResponse["states"];
         setState(() {
-          stateData = stateList;
+          stateData = tempStates;
         });
-        // print(stateData);
       }
     } catch (e) {}
   }
@@ -169,7 +211,7 @@ class _Step_1State extends State<Step_1> {
       var client = http.Client();
       var response =
           await http.get(Uri.parse("${dotenv.env['APP_URL']}city/$stateId"));
-      if (response.statusCode == 200) {
+      if (response.statusCode == SUCCESS) {
         final jsonResponse = jsonDecode(response.body);
         final cityList = jsonResponse['cities'] as List;
         setState(() {
@@ -181,17 +223,24 @@ class _Step_1State extends State<Step_1> {
   }
 
   var printData;
-
+  int? pageId;
   Future<void> getData(id) async {
     try {
       var response = await http.get(
         Uri.parse("${dotenv.env['APP_URL']}edit-project/$id"),
       );
-      if (response.statusCode == 200) {
+      if (response.statusCode == SUCCESS) {
         final jsonResponse = jsonDecode(response.body);
         setState(() {
           printData = jsonResponse;
           if (printData != null && printData['project_id'] != null) {
+
+            // print("plotype -----");
+            // print(printData["project"]["plot_type"]);
+            pageId = printData['project']['id'] != null
+                ? int.parse(printData['project']['id'].toString())
+                : pageId;
+            print(pageId);
             nameController = printData["project"]['first_name'] != null
                 ? printData["project"]['first_name'].toString()
                 : '';
@@ -201,29 +250,62 @@ class _Step_1State extends State<Step_1> {
             emailController = printData["project"]["email"] != null
                 ? printData["project"]["email"].toString()
                 : "";
-            addressController = printData["project"]["country"] != null
-                ? printData["project"]["country"].toString()
+            addressController = printData["project"]["address"] != null
+                ? printData["project"]["address"].toString()
                 : "";
+            selectedState = printData["project"]["state_name"] != null
+                ? printData["project"]["state_name"].toString()
+                : "";
+            lengthController = printData["project"]["plot_length"] != null
+                ? printData["project"]["plot_length"].toString()
+                : "";
+            widthController = printData["project"]["plot_width"] != null
+                ? printData["project"]["plot_width"].toString()
+                : "";
+            plotLenght = printData["project"]["plot_length"] != null
+                ? int.parse(printData["project"]["plot_length"])
+                : 0;
+            plotWidth = printData["project"]["plot_width"] != null
+                ? int.parse(printData["project"]["plot_width"])
+                : 0;
             diagonal1Controller = printData["project"]["diagonal_1"] != null
                 ? printData["project"]["diagonal_1"].toString()
                 : '';
             diagonal2Controller = printData["project"]["diagonal_2"] != null
                 ? printData["project"]["diagonal_2"].toString()
                 : '';
-            eastController = printData["project"]["east_property"] != null
-                ? printData["project"]["east_property"].toString()
+            diagonal1 = printData["project"]["diagonal_1"] != null
+                ? int.parse(printData["project"]["diagonal_1"].toString())
+                : 0;
+            diagonal2 = printData["project"]["diagonal_2"] != null
+                ? int.parse(printData["project"]["diagonal_2"].toString())
+                : 0;
+            eastController = printData["project"]["east_road_width"] != null
+                ? printData["project"]["east_road_width"].toString()
                 : "";
-            westController = printData["project"]["west_property"] != null
-                ? printData["project"]["west_property"].toString()
+
+            westController = printData["project"]["west_road_width"] != null
+                ? printData["project"]["west_road_width"].toString()
                 : "";
-            northController = printData["project"]["north_property"] != null
-                ? printData["project"]["north_property"].toString()
+            northController = printData["project"]["north_road_width"] != null
+                ? printData["project"]["north_road_width"].toString()
                 : "";
-            southController = printData["project"]["south_property"] != null
-                ? printData["project"]["south_property"].toString()
+            southController = printData["project"]["south_road_width"] != null
+                ? printData["project"]["south_road_width"].toString()
                 : "";
-            levelController = printData["project"]["level"] != null
-                ? printData["project"]["level"].toString()
+            levelController = printData["project"]["level_value"] != null
+                ? printData["project"]["level_value"].toString()
+                : "";
+
+            plotValue.text = printData["project"]["plot_size"] != null
+                ? printData["project"]["plot_size"].toString()
+                : "";
+
+            stateId = printData["project"]["state"] != null
+                ? printData["project"]["state"]
+                : "";
+            cityId = printData["project"]["city"] != null
+                ? printData["project"]["city"]
                 : "";
           }
         });
@@ -246,7 +328,10 @@ class _Step_1State extends State<Step_1> {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     String? userData = prefs.getString('userData');
     project_id = prefs.getInt('projectId');
-
+    projectTypeId = prefs.getInt('projectTypeId');
+    projectGroupId = prefs.getInt('projectGroupId');
+    print('project_id==');
+    print(project_id);
     getData(project_id);
     var decJson;
     if (userData != null) {
@@ -255,48 +340,62 @@ class _Step_1State extends State<Step_1> {
     user_id = decJson['data']['id'];
   }
 
+  Future<void> setDimension(dimension) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setInt('dimension', dimenInt);
+  }
+
+  String? plotType;
+
   @override
   void initState() {
     super.initState();
+
     getUserId();
     final store = Provider.of<PageNavProvider>(context, listen: false);
-
-    // getData(store.getId());
-
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-
-    // if (store.getId() == 0) {
-    //   printData = {"project": null};
-    // } else {
-    //   getData(store.getId());
-    // }
-    // });
-
     var residentProvider =
         Provider.of<ResidentialProvider>(context, listen: false);
 
-    var group_temp = residentProvider.getProjectGroupData();
+    // var group_temp = residentProvider.getProjectGroupData();
 
-    group_temp.then(
-      (value) {
-        projectGroupId = value;
-      },
-    );
+    // group_temp.then(
+    //   (value) {
+    //     projectGroupId = value;
+    //   },
+    // );
 
-    var type_temp = residentProvider.getProjectType();
-    type_temp.then(
-      (value) {
-        projectTypeId = value;
-      },
-    );
+    // var type_temp = residentProvider.getProjectType();
+    // type_temp.then(
+    //   (value) {
+    //     projectTypeId = value;
+    //   },
+    // );
     getCities();
     getState();
-    plotValue.addListener(() => setState(() {}));
-    if (printData == null) {
-      setState(() {
-        isloading = true;
-      });
-    }
+    apiRegularCalcuation();
+
+    plotValue.addListener(
+      () => setState(
+        () {
+          if (printData != null) {
+            plotType = printData["project"]["plot_type"].toString();
+            if (plotType == '1') {
+              plotValue.text = (int.parse(printData["project"]["plot_length"]) *
+                      int.parse(printData["project"]["plot_width"].toString()))
+                  .toString();
+            }
+            if (plotType == '2') {
+              plotValue
+                  .text = ((int.parse(printData["project"]["plot_length"]) *
+                          int.parse(
+                              printData["project"]["plot_width"].toString())) /
+                      2)
+                  .toString();
+            }
+          }
+        },
+      ),
+    );
   }
 
   @override
@@ -308,11 +407,11 @@ class _Step_1State extends State<Step_1> {
 
     if (printData != null) {
       setState(() {
-        isloading = false;
+        isloading = true;
       });
     }
-    return isloading
-        ? const Center(
+    return isloading == false
+        ? Center(
             child: CircularProgressIndicator(),
           )
         : SingleChildScrollView(
@@ -387,11 +486,12 @@ class _Step_1State extends State<Step_1> {
                         width: width * 0.25,
                         child: TextFormField(
                           // controller: nameController,
-                          initialValue: printData['project'] != null
-                              ? printData['project']['first_name'] != null
+                          initialValue: printData != null
+                              ? printData["project"]['first_name'] != null
                                   ? printData["project"]['first_name']
-                                  : ''
-                              : '',
+                                      .toString()
+                                  : nameController
+                              : nameController,
                           style: const TextStyle(fontSize: 14),
                           decoration: const InputDecoration(
                               hintText: "First name",
@@ -418,7 +518,7 @@ class _Step_1State extends State<Step_1> {
                         width: width * 0.19,
                         child: TextFormField(
                           // controller: nameController,
-                          initialValue: printData["project"] != null
+                          initialValue: printData != null
                               ? printData["project"]['last_name'] != null
                                   ? printData["project"]['last_name'].toString()
                                   : lastNameController
@@ -583,38 +683,67 @@ class _Step_1State extends State<Step_1> {
                         width: width * 0.6,
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
-                            onTap: () {},
-                            hint: printData['project'] != null
-                                ? printData["project"]["state_name"] != null
-                                    ? Text(printData["project"]["state_name"])
-                                    : Text(selectedState)
-                                : Text(selectedState),
+                            // value: printData["project"] != null
+                            //     ? printData["project"]["state_name"] != null
+                            //         ? printData["project"]["state_name"]
+                            //         : selectedState
+                            //     : selectedState,
+                            hint: Text(selectedState),
+
+                            // hint: printData['project'] != null
+                            //     ? printData["project"]["state_name"] != null
+                            //         ? Text(printData["project"]["state_name"])
+                            //         : Text(selectedState)
+                            //     : Text(selectedState),
                             elevation: 16,
-                            items: stateData
-                                .map(
-                                  (it) => DropdownMenuItem<String>(
-                                    value: it["state_name"],
-                                    child: Text(
-                                      it["state_name"],
-                                      style: TextStyle(fontSize: height * 0.02),
-                                    ),
-                                    onTap: () {
-                                      setState(() {
-                                        stateId = it["id"];
-                                        getCities();
-                                      });
-                                    },
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: (it) => setState(() {
-                              if (printData['project'] != null) {
-                                printData["project"]["state_name"] = null;
-                              }
-                              selectedState = it!;
-                              getCities();
-                            }),
+                            items: stateData.asMap().entries.map((e) {
+                              int idx = e.key;
+                              String val = e.value['state_name'];
+                              return DropdownMenuItem<String>(
+                                value: val,
+                                onTap: () {
+                                  stateId = e.value["id"];
+                                  getCities();
+                                },
+                                child: Text(val),
+                              );
+                            }).toList(),
+
+                            onChanged: (it) {
+                              setState(() {
+                                if (printData['project'] != null) {
+                                  printData["project"]["state_name"] = null;
+                                }
+                                selectedState = it.toString();
+                                getCities();
+                              });
+                            },
+
+                            // stateData
+                            //     .map(
+                            //       (it) => DropdownMenuItem<String>(
+                            //         value: it["state_name"] != null &&
+                            //                 it["state_name"] != ''
+                            //             ? it["state_name"]
+                            //             : Text(selectedState),
+                            //         child: Text(
+                            //           it["state_name"],
+                            //           style: TextStyle(
+                            //               fontSize: height * 0.02),
+                            //         ),
+                            //         onTap: () {
+                            //           setState(() {
+                            //             // stateId = it["id"];
+                            //             // print('it["id"]');
+                            //             // print(it["id"]);
+                            //             getCities();
+                            //           });
+                            //         },
+                            //       ),
+                            //     )
+                            //     .toList(),
                           ),
+
                         ),
                       ),
                     ),
@@ -640,9 +769,12 @@ class _Step_1State extends State<Step_1> {
                         width: width * 0.6,
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
-                            hint: printData['project'] != null
-                                ? printData["project"]["city_name"] != null
-                                    ? Text(printData["project"]["city_name"])
+                            hint: printData != null
+                                ? printData["project"] != null
+                                    ? printData["project"]["city_name"] != null
+                                        ? Text(
+                                            printData["project"]["city_name"])
+                                        : Text(myState)
                                     : Text(myState)
                                 : Text(myState),
                             elevation: 16,
@@ -665,7 +797,11 @@ class _Step_1State extends State<Step_1> {
                             onChanged: (newValue) {
                               setState(
                                 () {
-                                  myState = newValue!;
+                                  if (printData['project'] != null) {
+                                    printData["project"]["city_name"] =
+                                        newValue.toString();
+                                  }
+                                  myState = newValue.toString();
                                 },
                               );
                             },
@@ -739,6 +875,18 @@ class _Step_1State extends State<Step_1> {
                         setState(() {
                           regularPlotValue = val;
                           irregularPlotValue = false;
+                          key:
+                          Key(totalCalculated());
+
+                          // if (lengthController != null && widthController != null) {
+                          //   plotValue.text = (int.parse(lengthController!) *
+                          //           int.parse(widthController!))
+                          //       .toString();
+
+                          //   print(" ======");
+                          //   print(plotValue.text);
+                          // }
+
                           if (printData != null &&
                               printData['project'] != null) {
                             printData['project']['plot_type'] = val;
@@ -756,23 +904,22 @@ class _Step_1State extends State<Step_1> {
                     Checkbox(
                       activeColor: checkColor,
                       checkColor: Colors.white,
-                      value: printData['project'] != null
-                          // ? printData['project']['plot_type'] != null
-                          ? printData['project']['plot_type'] == 0
-                              ? true
+                      value: printData != null
+                          ? printData['project'] != null
+                              ? printData['project']['plot_type'] == 2
+                                  ? true
+                                  : irregularPlotValue
                               : irregularPlotValue
-                          // : irregularPlotValue
                           : irregularPlotValue,
-                      // value: printData['project']['plot_type'] == 2
-                      //     ? true
-                      //     : irregularPlotValue,
                       onChanged: (val) {
                         setState(
                           () {
                             irregularPlotValue = val;
                             regularPlotValue = false;
-                            if (printData['project'] != null) {
-                              printData['project']['plot_type'] = 3;
+
+                            if (printData != null &&
+                                printData['project'] != null) {
+                              printData['project']['plot_type'] = val;
                             }
                           },
                         );
@@ -781,6 +928,7 @@ class _Step_1State extends State<Step_1> {
                     requirementText("Irregular plot"),
                   ],
                 ),
+                //  if (regularPlotValue == true) ...[
                 Row(
                   children: [
                     requirementText("Length"),
@@ -811,8 +959,15 @@ class _Step_1State extends State<Step_1> {
                           onChanged: (val) {
                             setState(() {
                               if (val != '') {
+                                plotType = '';
                                 plotLenght = int.parse(val.toString());
                                 lengthController = val;
+                                totalCalculated();
+                                if (printData != null &&
+                                    printData['project']['plot_length'] !=
+                                        null) {
+                                  printData['project']['plot_length'] = val;
+                                }
                               } else {
                                 plotLenght = 0;
                                 plotValue.text = '0';
@@ -822,7 +977,7 @@ class _Step_1State extends State<Step_1> {
                           },
                           onTap: () {
                             setState(() {
-                              plotLenght = 0;
+                              // plotLenght = 0;
                             });
                           },
                           keyboardType: TextInputType.number,
@@ -836,10 +991,12 @@ class _Step_1State extends State<Step_1> {
                     SizedBox(
                       width: width * 0.02,
                     ),
-                    // if (irregularPlotValue == true || printData != null
+                    // if (irregularPlotValue == true)
                     if (printData != null
                         ? printData['project'] != null
-                            ? printData['project']['plot_type'] == 1
+                            ? printData['project']['plot_type'] == 2
+                                ? true
+                                : irregularPlotValue == true
                             : irregularPlotValue == true
                         : irregularPlotValue == true) ...[
                       requirementText("Diagona1"),
@@ -866,20 +1023,30 @@ class _Step_1State extends State<Step_1> {
                             initialValue: printData['project'] != null
                                 ? printData['project']['diagonal_1'] != null
                                     ? printData['project']['diagonal_1']
-                                    : diagonal1.toString()
-                                : diagonal1.toString(),
+                                    : diagonal1Controller
+                                : diagonal1Controller,
                             onChanged: (value) {
                               setState(() {
                                 if (value != '') {
                                   diagonal1 = int.parse(value.toString());
+                                  diagonal1Controller = value;
+                                  if (printData != null &&
+                                      printData['project']['diagonal_1'] !=
+                                          null) {
+                                    printData['project']['diagonal_1'] = value;
+                                  }
+                                  diagonalCalculations();
                                 } else {
                                   diagonal1 = 0;
                                   plotValue.text = '0';
+                                  diagonal1Controller = '0';
                                 }
                               });
                             },
                             onTap: () {
-                              setState(() {});
+                              setState(() {
+                                diagonalCalculations();
+                              });
                             },
                             keyboardType: TextInputType.number,
                           ),
@@ -921,8 +1088,15 @@ class _Step_1State extends State<Step_1> {
                           onChanged: (val) {
                             setState(() {
                               if (val != '') {
+                                plotType = '';
                                 plotWidth = int.parse(val.toString());
                                 widthController = val;
+                                if (printData != null &&
+                                    printData['project']['plot_width'] !=
+                                        null) {
+                                  printData['project']['plot_width'] = val;
+                                }
+                                totalCalculated();
                               } else {
                                 plotWidth = 0;
                                 plotValue.text = '0';
@@ -949,11 +1123,15 @@ class _Step_1State extends State<Step_1> {
                     SizedBox(
                       width: width * 0.02,
                     ),
-                    if (printData == null
-                        ? printData['project']['plot_type'] == 1
-                            ? true
+                    if (printData != null
+                        ? printData['project'] != null
+                            ? printData['project']['plot_type'] == 2
+                                ? true
+                                : irregularPlotValue == true
                             : irregularPlotValue == true
-                        : irregularPlotValue == true) ...[
+                        : irregularPlotValue == true)
+                      // if (irregularPlotValue == true)
+                      ...[
                       requirementText("Diagona2"),
                       SizedBox(
                         width: width * 0.02,
@@ -974,18 +1152,25 @@ class _Step_1State extends State<Step_1> {
                                 contentPadding: EdgeInsets.all(8)
                                 // fillColor: Colors.green
                                 ),
-                            initialValue: printData != null
-                                ? printData['project'] != null
+                            initialValue: printData['project'] != null
+                                ? printData['project']['diagonal_2'] != null
                                     ? printData['project']['diagonal_2']
-                                    : diagonal2Controller
-                                : '',
-                            onChanged: (diagonal2Controller) {
+                                    : diagonal2Controller.toString()
+                                : diagonal2Controller.toString(),
+                            onChanged: (value) {
                               setState(() {
-                                if (diagonal2Controller != '') {
-                                  diagonal2 =
-                                      int.parse(diagonal2Controller.toString());
+                                if (value != '') {
+                                  diagonal2 = int.parse(value.toString());
+                                  diagonal2Controller = value;
+                                  if (printData != null &&
+                                      printData['project']['diagonal_2'] !=
+                                          null) {
+                                    printData['project']['diagonal_2'] = value;
+                                  }
+                                  diagonalCalculations();
                                 } else {
                                   diagonal2 = 0;
+                                  diagonal2Controller = '0';
                                   plotValue.text = '0';
                                 }
                               });
@@ -1010,6 +1195,7 @@ class _Step_1State extends State<Step_1> {
                 SizedBox(
                   height: height * 0.01,
                 ),
+                // ],
                 Row(
                   children: [
                     requirementText("Plot size"),
@@ -1034,13 +1220,21 @@ class _Step_1State extends State<Step_1> {
                                 //fillColor: Colors.green
                                 ),
                             key: Key(diagonalCalculations()),
-                            initialValue: printData != null
-                                ? printData['project'] != null
-                                    // ? printData['project']['plot_size'] != null
-                                    ? printData['project']['plot_size']
-                                    // : plotValue
-                                    : plotValue.text
-                                : plotValue.text,
+                            // initialValue: printData != null
+                            //     ? printData['project'] != null
+                            //         // ? printData['project']['plot_size'] != null
+                            //         ? printData['project']['plot_size']
+                            //         // : plotValue
+                            //         : plotValue.value.text
+                            //     : plotValue.value.text,
+                            // initialValue: printData != null
+                            //     ? printData['project'] != null
+                            //         ? printData['project']['plot_size'] != null
+                            //             ? printData['project']['plot_size'].toString()
+                            //             : plotValue.text
+                            //         : plotValue.text
+                            //     : plotValue.text,
+                            controller: plotValue,
                             onChanged: (value) {
                               setState(() {
                                 if (plotLenght == 0 || plotWidth == 0) {
@@ -1052,6 +1246,8 @@ class _Step_1State extends State<Step_1> {
                                   plotValue.value = plotValue.value.copyWith(
                                     text: value.toString(),
                                   );
+                                  // printData['project']['plot_size'] =
+                                  // plotValue.text;
                                 }
                               });
                             },
@@ -1085,13 +1281,12 @@ class _Step_1State extends State<Step_1> {
                                 //fillColor: Colors.green
                                 ),
                             key: Key(totalCalculated()),
-                            initialValue: printData != null
-                                ? printData['project'] != null
-                                    ? printData['project']['plot_size']
-                                        .toString()
-                                    : plotValue.text
-                                : plotValue.text,
-                            // controller: plotValue,
+                            // initialValue: printData != null
+                            //     ? printData['project'] != null
+                            //         ? printData['project']['plot_size'].toString()
+                            //         : plotValue.value.text
+                            //     : plotValue.value.text,
+                            controller: plotValue,
                             onChanged: (value) {
                               setState(() {
                                 plotValue.value = plotValue.value.copyWith(
@@ -1797,48 +1992,17 @@ class _Step_1State extends State<Step_1> {
                       SizedBox(
                         width: width * 0.01,
                       ),
-                      valueContainer(height, width, size, 0.039, 0.05)
-                    ],
-                    if (selectedLevel == "Down") ...[
-                      Material(
-                        elevation: 5,
-                        borderRadius:
-                            const BorderRadius.all(Radius.circular(5)),
-                        child: SizedBox(
-                          height: height * 0.04,
-                          width: width * 0.22,
-                          child: TextFormField(
-                            // controller: nameController,
-                            initialValue: printData['project'] != null
-                                ? printData["project"]['level_value_feet']
-                                : levelController,
-                            style: const TextStyle(fontSize: 14),
-                            decoration: const InputDecoration(
-                              hintText: "Road width",
-                              hintStyle: TextStyle(fontSize: 14),
-                              border: OutlineInputBorder(
-                                borderSide: BorderSide.none,
-                              ),
-                              isDense: true,
-                              contentPadding: EdgeInsets.all(8),
-                              // fillColor: Colors.green
-                            ),
-                            onChanged: (value) {
-                              levelController = value;
-                            },
-                          ),
-                        ),
-                      ),
+
                       SizedBox(
                         width: width * 0.01,
                       ),
-                      valueContainer(
-                        height,
-                        width,
-                        size,
-                        0.039,
-                        0.05,
-                      ),
+                      // valueContainer(
+                      //   height,
+                      //   width,
+                      //   size,
+                      //   0.039,
+                      //   0.05,
+                      // ),
                     ]
                   ],
                 ),
@@ -1856,9 +2020,14 @@ class _Step_1State extends State<Step_1> {
 
                         if (size == "m") {
                           dimenInt = 2;
+                          setDimension(dimenInt);
+                        } else {
+                          dimenInt = 1;
+                          setDimension(1);
                         }
                         if (regularPlotValue == true) {
-                          isNotRegular = 1;
+                          // isNotRegular = 1;
+                          isRegular = 1;
                         }
 
                         if (isNorthOrientaion == true) {
@@ -1903,40 +2072,85 @@ class _Step_1State extends State<Step_1> {
                         }
                       },
                     );
-                    var status = await provider.requirementPost(
-                      user_id,
-                      projectGroupId,
-                      projectTypeId,
-                      selectedItems,
-                      nameController,
-                      lastNameController,
-                      emailController,
-                      1,
-                      stateId,
-                      cityId,
-                      addressController,
-                      isRegular,
-                      dimenInt,
-                      lengthController!,
-                      widthController!,
-                      diagonal1Controller!,
-                      diagonal2Controller!,
-                      plotValue.text,
-                      " ",
-                      plot_orientaion,
-                      " ",
-                      isEast,
-                      eastController,
-                      isWest,
-                      westController,
-                      isNorth,
-                      northController,
-                      isSouth,
-                      southController,
-                      selectedLevelInt,
-                      levelController,
-                      notReqiredInt,
-                    );
+                    // print("upadte is running");
+                    // print(project_id);
+                    var status;
+
+                    if (pageId != null) {
+                      print("upadte is running");
+                      print(project_id);
+                      provider.requirementUpadate(
+                        project_id,
+                        user_id,
+                        projectGroupId,
+                        projectTypeId,
+                        selectedItems,
+                        nameController,
+                        lastNameController,
+                        emailController,
+                        COUNTRY_ID,
+                        stateId,
+                        cityId,
+                        addressController,
+                        isRegular,
+                        dimenInt,
+                        lengthController!,
+                        widthController!,
+                        diagonal1Controller!,
+                        diagonal2Controller!,
+                        plotValue.text,
+                        " ",
+                        plot_orientaion,
+                        " ",
+                        isEast,
+                        eastController,
+                        isWest,
+                        westController,
+                        isNorth,
+                        northController,
+                        isSouth,
+                        southController,
+                        selectedLevelInt,
+                        levelController,
+                        notReqiredInt,
+                      );
+                    } else {
+                      provider.requirementPost(
+                        user_id,
+                        projectGroupId,
+                        projectTypeId,
+                        selectedItems,
+                        nameController,
+                        lastNameController,
+                        emailController,
+                        COUNTRY_ID,
+                        stateId,
+                        cityId,
+                        addressController,
+                        isRegular,
+                        dimenInt,
+                        lengthController!,
+                        widthController!,
+                        diagonal1Controller!,
+                        diagonal2Controller!,
+                        plotValue.text,
+                        " ",
+                        plot_orientaion,
+                        " ",
+                        isEast,
+                        eastController,
+                        isWest,
+                        westController,
+                        isNorth,
+                        northController,
+                        isSouth,
+                        southController,
+                        selectedLevelInt,
+                        levelController,
+                        notReqiredInt,
+                      );
+                    }
+
                     // project_id = provider.project_id;
                     if (status == 200) {
                       showToast('Project Requirement Submitted !',
