@@ -66,16 +66,16 @@ class _HintDailogState extends State<HintDailog> {
       future: futureCall(),
       builder: (_, dataSnapshot) {
         if (dataSnapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator());
         } else {
           Future(() {
             // Future Callback
             showDialog(
               context: context,
               builder: (context) => AlertDialog(
-                title: Text('Employee Data'),
+                title: const Text('Employee Data'),
                 content: Container(
-                  padding: EdgeInsets.only(top: 15),
+                  padding: const EdgeInsets.only(top: 15),
                   height: MediaQuery.of(context).size.height * 0.3,
                   width: MediaQuery.of(context).size.width * 0.2,
                   child: Column(
@@ -2522,6 +2522,6 @@ class _EntranceState extends State<Entrance> {
 Text headingFont(String s) {
   return Text(
     s,
-    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
   );
 }
